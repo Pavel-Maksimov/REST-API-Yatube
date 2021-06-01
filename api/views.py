@@ -1,10 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import filters, generics, viewsets
+from rest_framework import filters, mixins, viewsets
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-from .exceptions import ActionDenied
 from .models import Comment, Follow, Group, Post, User
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (CommentSerializer, FollowSerializer, GroupSerializer,
@@ -41,7 +40,10 @@ class CommentViewSet(viewsets.ModelViewSet):
         serializer.save(author=self.request.user, post=post)
 
 
-class GroupList(generics.ListCreateAPIView):
+class GroupViewSet(mixins.CreateModelMixin,
+                   mixins.ListModelMixin,
+                   mixins.RetrieveModelMixin,
+                   viewsets.GenericViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsAuthorOrReadOnly]
@@ -50,7 +52,10 @@ class GroupList(generics.ListCreateAPIView):
         serializer.save()
 
 
-class FollowList(generics.ListCreateAPIView):
+class FollowViewSet(mixins.CreateModelMixin,
+                    mixins.ListModelMixin,
+                    mixins.RetrieveModelMixin,
+                    viewsets.GenericViewSet):
     serializer_class = FollowSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['user__username']
@@ -58,16 +63,3 @@ class FollowList(generics.ListCreateAPIView):
     def get_queryset(self):
         user = self.request.user
         return Follow.objects.filter(following=user)
-
-    def perform_create(self, serializer):
-        following = self.request.data.get('following')
-        following = get_object_or_404(User, username=following)
-        follow = Follow.objects.filter(user=self.request.user,
-                                       following=following)
-        if follow.exists():
-            raise ActionDenied('Подписка уже оформлена.')
-        if self.request.user == following:
-            raise ActionDenied(
-                'Вы не можете подписаться на самого себя.'
-            )
-        serializer.save(user=self.request.user)
