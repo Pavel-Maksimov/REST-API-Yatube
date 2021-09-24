@@ -17,6 +17,10 @@ sudo apt-get install python3.8
 ```
 git clone https://github.com/Pavel-Maksimov/REST-API-Yatube.git
 ```
+Установите виртуальное окружение:
+```
+sudo apt install python3.8-venv
+```
 Перейдите в папку с проектом и создайте и активируйте виртуальное окружение. <br>
 Для Windows:
 ```
@@ -31,6 +35,10 @@ source venv/bin/activate
 Установите все необходимые зависимости:
 ```
 (venv)$pip install -r requirements.txt
+```
+Примените миграции:
+```
+python manage.py migrate
 ```
 Для запуска сервера выполните команду:
 ```
